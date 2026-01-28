@@ -1,46 +1,49 @@
-// bot_directo.js - Conexión directa sin caché
-const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
+// index.js
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 
-console.log('🤖 BOT DIRECTO CON PUPPETEER');
+// Inicializa el cliente con LocalAuth para guardar sesión
+const client = new Client({
+    authStrategy: new LocalAuth({ clientId: "bot" }),
+    puppeteer: {
+        headless: true,
+        executablePath: '/usr/bin/chromium-browser', // ruta de Chromium en Ubuntu
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+});
 
-async function iniciarBot() {
-    // 1. Abrir Chrome manualmente
-    const browser = await puppeteer.launch({
-        headless: false, // VER lo que pasa
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        userDataDir: './chrome_data_directo'
-    });
-    
-    // 2. Abrir WhatsApp Web
-    const page = await browser.newPage();
-    await page.goto('https://web.whatsapp.com');
-    
-    console.log('📱 Abre WhatsApp Web en el navegador que se abrió');
-    console.log('👉 Escanea el QR en la página');
-    console.log('👉 Luego vuelve a esta terminal');
-    
-    // Esperar a que el usuario escanee
-    await page.waitForSelector('div[data-testid="chat-list"]', { timeout: 120000 });
-    
-    console.log('✅ WhatsApp Web cargado!');
-    
-    // 3. Enviar mensaje de prueba
-    await page.evaluate(() => {
-        // Buscar tu propio chat
-        const searchBox = document.querySelector('div[data-testid="chat-list-search"]');
-        if (searchBox) {
-            searchBox.click();
-            // Aquí necesitarías inyectar código para enviar mensajes
-            // Esto es solo para demostrar que la conexión funciona
-        }
-    });
-    
-    console.log('🎉 Conexión exitosa! El problema NO es de conexión');
-    console.log('🔧 El problema está en tu código de mensajes');
-    
-    await browser.close();
-}
+let isReady = false;
 
-iniciarBot().catch(console.error);
+// Mostrar QR en consola solo si no hay sesión guardada
+client.on('qr', (qr) => {
+    console.log('📱 ESCANEA EL QR CON TU WHATSAPP:');
+    qrcode.generate(qr, { small: true });
+});
+
+// Evento cuando el bot se autentica
+client.on('authenticated', () => {
+    console.log('✅ AUTENTICADO');
+});
+
+// Evento cuando el bot está listo
+client.on('ready', () => {
+    if (isReady) return;
+    isReady = true;
+    console.log('✅ BOT LISTO Y CONECTADO');
+    console.log('📡 Esperando mensajes...');
+});
+
+// Evento cuando llega un mensaje
+client.on('message', (message) => {
+    console.log('');
+    console.log('🔔 ¡MENSAJE RECIBIDO!');
+    console.log('De:', message.from);
+    console.log('Texto:', message.body);
+    console.log('');
+
+    // Responder al mensaje
+    message.reply('✅ Funciona: ' + message.body);
+});
+
+console.log('🚀 Iniciando bot de WhatsApp...');
+client.initialize();
