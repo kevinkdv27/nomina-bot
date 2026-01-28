@@ -1,41 +1,40 @@
-// index.js
+// index.js - BOT WhatsApp para AWS Ubuntu
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
-// Inicializa el cliente con LocalAuth para guardar sesión
+let isReady = false;
+
+// Inicializa el cliente
 const client = new Client({
     authStrategy: new LocalAuth({ clientId: "bot" }),
     puppeteer: {
-    headless: true,
-    executablePath: '/usr/bin/chromium-browser', // Chromium de Ubuntu
-    args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
-    ]
-}
-
+        headless: false, // Cambiar a true después de que funcione
+        executablePath: '/usr/bin/chromium-browser',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+        ]
+    }
 });
 
-let isReady = false;
-
-// Mostrar QR en consola solo si no hay sesión guardada
+// Evento QR
 client.on('qr', (qr) => {
     console.log('📱 ESCANEA EL QR CON TU WHATSAPP:');
     qrcode.generate(qr, { small: true });
 });
 
-// Evento cuando el bot se autentica
+// Evento autenticado
 client.on('authenticated', () => {
     console.log('✅ AUTENTICADO');
 });
 
-// Evento cuando el bot está listo
+// Evento ready
 client.on('ready', () => {
     if (isReady) return;
     isReady = true;
@@ -43,8 +42,8 @@ client.on('ready', () => {
     console.log('📡 Esperando mensajes...');
 });
 
-// Evento cuando llega un mensaje
-client.on('message', (message) => {
+// Evento mensajes
+client.on('message', async (message) => {
     console.log('');
     console.log('🔔 ¡MENSAJE RECIBIDO!');
     console.log('De:', message.from);
@@ -52,8 +51,18 @@ client.on('message', (message) => {
     console.log('');
 
     // Responder al mensaje
-    message.reply('✅ Funciona: ' + message.body);
+    try {
+        await message.reply('✅ Funciona: ' + message.body);
+    } catch (err) {
+        console.error('❌ Error al responder:', err.message);
+    }
 });
 
+// Manejo de errores globales de Puppeteer
+client.on('disconnected', (reason) => {
+    console.log('⚠️ Bot desconectado:', reason);
+});
+
+// Inicializar
 console.log('🚀 Iniciando bot de WhatsApp...');
 client.initialize();
