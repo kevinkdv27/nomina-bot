@@ -7,20 +7,21 @@ let isReady = false;
 // Inicializa el cliente
 const client = new Client({
     authStrategy: new LocalAuth({ clientId: "bot" }),
-    puppeteer: {
-        headless: false, // Cambiar a true después de que funcione
-        executablePath: '/usr/bin/chromium-browser',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-        ]
-    }
+  puppeteer: {
+    headless: true,  // <-- aquí
+    executablePath: '/usr/bin/chromium-browser',
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+    ]
+}
+
 });
 
 // Evento QR
